@@ -10,6 +10,7 @@ namespace CrowdfundingLib
     {
         public string Title { get; set; }
         public string Description { get; set; }
+        public float CurrentAmount { get; set; }
         public DateTimeOffset Deadline { get; set; }
 
         public Project(string title,
@@ -19,6 +20,12 @@ namespace CrowdfundingLib
             Title = title;
             Description = description;
             Deadline = deadline;
+            CurrentAmount = 0;
+        }
+
+        public void Fund(float amount)
+        {
+            CurrentAmount += amount;
         }
 
         public override bool Equals(object? obj)

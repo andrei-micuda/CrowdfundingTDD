@@ -31,5 +31,36 @@ namespace CrowdfundingTest
                 Throws.InstanceOf<ArgumentException>()
                         .With.Message.EqualTo("Project deadline cannot be in the past"));
         }
+
+        [Test]
+        public void FundProject_PositiveAmount_CurrentAmountUpdated()
+        {
+            // Arrange
+            Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(7)));
+            float amountToFund = 200;
+
+            // Act
+            createdProject.Fund(amountToFund);
+
+            // Assert
+            Assert.That(createdProject.CurrentAmount, Is.EqualTo(amountToFund));
+        }
+
+        [Test]
+        public void FundProject_NegativeAmount_ThrowsArgumentException()
+        {
+            // Arrange
+            Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(7)));
+            float amountToFund = -200;
+
+            // Act
+            createdProject.Fund(amountToFund);
+
+            Assert.That(
+                () => Platform.AddProject(createdProject),
+                Throws.InstanceOf<ArgumentException>()
+                        .With.Message.EqualTo("Cannot fund with negative amount"));
+        }
+
     }
 }
