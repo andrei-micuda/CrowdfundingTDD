@@ -27,16 +27,26 @@ namespace CrowdfundingLib
             Transactions = 0;
         }
 
-        public void Fund(float amount)
+        public void Fund(float amount, float balance)
         {
             if (amount < 0)
             {
                 throw new ArgumentException("Cannot fund with negative amount");
             }
+
+            if(balance < amount)
+            {
+                throw new ArgumentException("Insufficient funds.");
+            }
             
             if(CurrentAmount >= GoalAmount)
             {
                 throw new OverflowException("Cannot fund this project, because it has already reached its goal amount of funds!");
+            }
+
+            if (DateTimeOffset.Compare(DateTimeOffset.UtcNow, Deadline) > 0)
+            {
+                throw new ArgumentException("Funding is no longer available. Deadline was exceded");
             }
 
             CurrentAmount += amount;

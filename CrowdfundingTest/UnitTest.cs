@@ -38,10 +38,11 @@ namespace CrowdfundingTest
         {
             // Arrange
             Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(7), 10000));
+            Account person = new Account(1, 1000000);
             float amountToFund = 200;
 
             // Act
-            createdProject.Fund(amountToFund);
+            createdProject.Fund(amountToFund, person.balance);
 
             // Assert
             Assert.That(createdProject.CurrentAmount, Is.EqualTo(amountToFund));
@@ -52,12 +53,13 @@ namespace CrowdfundingTest
         {
             // Arrange
             Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(7), 10000));
+            Account person = new Account(1, 1000000);
             float amountToFund = -200;
 
             // Act & Assert
 
             Assert.That(
-                () => createdProject.Fund(amountToFund),
+                () => createdProject.Fund(amountToFund, person.balance),
                 Throws.InstanceOf<ArgumentException>()
                         .With.Message.EqualTo("Cannot fund with negative amount"));
         }
@@ -67,6 +69,7 @@ namespace CrowdfundingTest
         {
             //Arrange
             Project newProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(5), 540));
+            Account person = new Account(1, 1000000);
 
             float firstAmount = 100;
             float secondAmount = 440;
@@ -75,8 +78,8 @@ namespace CrowdfundingTest
             Console.SetOut(stringWriter);
 
             //Act
-            newProject.Fund(firstAmount);
-            newProject.Fund(secondAmount);
+            newProject.Fund(firstAmount, person.balance);
+            newProject.Fund(secondAmount, person.balance);
 
             //Assert 
 
@@ -88,18 +91,19 @@ namespace CrowdfundingTest
         {
             //Arrange
             Project newProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(9), 810));
+            Account person = new Account(1, 1000000);
 
             float firstAmount = 300;
             float secondAmount = 510;
             float overflowAmount = 100;
 
             //Act
-            newProject.Fund(firstAmount);
-            newProject.Fund(secondAmount);
+            newProject.Fund(firstAmount, person.balance);
+            newProject.Fund(secondAmount, person.balance);
 
             //Assert 
             Assert.That(
-                () => newProject.Fund(overflowAmount),
+                () => newProject.Fund(overflowAmount, person.balance),
                 Throws.InstanceOf<OverflowException>()
                         .With.Message.EqualTo("Cannot fund this project, because it has already reached its goal amount of funds!"));
         }
@@ -109,6 +113,7 @@ namespace CrowdfundingTest
         {
             //Arrange
             Project newProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(12), 1010));
+            Account person = new Account(1, 1000000);
 
             float firstAmount = 300;
             float secondAmount = 510.27f;
@@ -119,14 +124,47 @@ namespace CrowdfundingTest
             int expectedTransactionsNumber = 5;
 
             //Act
-            newProject.Fund(firstAmount);
-            newProject.Fund(secondAmount);
-            newProject.Fund(thirdAmount);
-            newProject.Fund(fourthAmount);
-            newProject.Fund(fifthAmount);
+            newProject.Fund(firstAmount, person.balance);
+            newProject.Fund(secondAmount, person.balance);
+            newProject.Fund(thirdAmount, person.balance);
+            newProject.Fund(fourthAmount, person.balance);
+            newProject.Fund(fifthAmount, person.balance);
 
             //Assert 
             Assert.AreEqual(expectedTransactionsNumber, newProject.Transactions);
+        }
+        
+        [Test]
+        public void FundProject_PastDeadline_ThrowsArgumentException()
+        {
+            // Arrange
+            Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddSeconds(2), 10000));
+            Account person = new Account(1, 1000000);
+            System.Threading.Thread.Sleep(5000);
+            float amountToFund = 10000;
+
+            // Act & Assert
+
+            Assert.That(
+                () => createdProject.Fund(amountToFund, person.balance),
+                Throws.InstanceOf<ArgumentException>()
+                        .With.Message.EqualTo("Funding is no longer available. Deadline was exceded"));
+        }
+
+        [Test]
+        public void FundProject_InsufficientFunds_ThrowsArgumentException()
+        {
+            // Arrange
+            Project createdProject = Platform.AddProject(new Project("foo", "bar", DateTimeOffset.UtcNow.AddDays(20), 10000));
+            Account person = new Account(1, 1000);
+            float amountToFund = 5000;
+
+            // Act & Assert
+
+            Assert.That(
+                () => createdProject.Fund(amountToFund, person.balance),
+                Throws.InstanceOf<ArgumentException>()
+                        .With.Message.EqualTo("Insufficient funds."));
         }
 
 
